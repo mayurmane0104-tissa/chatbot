@@ -1,0 +1,151 @@
+groups:
+  - name: api_health
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend is down"
+          description: "FastAPI backend has been unreachable for more than 1 minute."
+
+      - alert: BackendHigh5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total[5m])), 1)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HTTP 5xx rate is high"
+          description: "More than 5% of backend requests are returning 5xx in the last 5 minutes."
+
+      - alert: BackendP95LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend p95 latency is high"
+          description: "p95 backend latency has been above 2 seconds for 5 minutes."
+
+      - alert: ChatErrorRateHigh
+        expr: sum(rate(tissatech_chat_errors_total[10m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Chat error rate is elevated"
+          description: "Chat errors exceeded 0.1/sec over the last 10 minutes."
+
+  - name: ai_and_crawl
+    rules:
+      - alert: BedrockErrorSpike
+        expr: sum(rate(bedrock_errors_total[5m])) > 0.2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bedrock errors are spiking"
+          description: "Bedrock error rate is above 0.2/sec for 3 minutes."
+
+      - alert: BedrockP95LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(bedrock_response_latency_ms_bucket[10m])) by (le)
+          ) > 10000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bedrock p95 latency is high"
+          description: "Bedrock p95 latency is above 10 seconds over the last 10 minutes."
+
+      - alert: CrawlFailureDetected
+        expr: increase(tissatech_crawl_jobs_total{status="failed"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Crawl job failed"
+          description: "At least one crawl job failed in the last 15 minutes."
+
+      - alert: CrawlP95DurationHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(tissatech_crawl_duration_seconds_bucket[30m])) by (le)
+          ) > 180
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Crawl duration is high"
+          description: "Crawl p95 duration is above 3 minutes for the last 15 minutes."
+
+  - name: data_stores
+    rules:
+      - alert: PostgresExporterDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres exporter is down"
+          description: "Prometheus cannot scrape postgres-exporter."
+
+      - alert: RedisExporterDown
+        expr: up{job="redis-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis exporter is down"
+          description: "Prometheus cannot scrape redis-exporter."
+
+      - alert: PostgresTooManyConnections
+        expr: max(pg_stat_database_numbackends) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Postgres connections are high"
+          description: "Postgres active connections exceeded 80 for 5 minutes."
+
+      - alert: RedisMemoryPressure
+        expr: redis_memory_used_bytes / clamp_min(redis_total_system_memory_bytes, 1) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory pressure"
+          description: "Redis is using more than 90% of system memory for 10 minutes."
+
+  - name: celery
+    rules:
+      - alert: CeleryExporterDown
+        expr: up{job="celery-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Celery exporter is down"
+          description: "Prometheus cannot scrape celery-exporter."
+
+      - alert: CeleryTaskFailureSpike
+        expr: increase(tissatech_celery_tasks_total{status="failed"}[15m]) > 2
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Celery task failures increased"
+          description: "More than 2 Celery task failures occurred in the last 15 minutes."

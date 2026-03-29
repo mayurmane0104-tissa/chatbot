@@ -1,0 +1,153 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "increase(tissatech_crawl_jobs_total{status=\"success\"}[1h])", "legendFormat": "success", "refId": "A" }
+      ],
+      "title": "Crawl Jobs Succeeded (1h)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "increase(tissatech_crawl_jobs_total{status=\"failed\"}[1h])", "legendFormat": "failed", "refId": "A" }
+      ],
+      "title": "Crawl Jobs Failed (1h)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(tissatech_crawl_duration_seconds_bucket[30m])) by (le))", "legendFormat": "p95", "refId": "A" }
+      ],
+      "title": "Crawl p95 Duration",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value" },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "sum(rate(tissatech_crawl_pages_crawled_total[15m]))", "legendFormat": "pages/s", "refId": "A" }
+      ],
+      "title": "Crawl Throughput (pages/s)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "sum(rate(tissatech_crawl_jobs_total[15m])) by (status)", "legendFormat": "{{status}}", "refId": "A" }
+      ],
+      "title": "Crawl Job Rate by Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "sum(rate(tissatech_crawl_request_errors_total[15m])) by (kind)", "legendFormat": "{{kind}}", "refId": "A" }
+      ],
+      "title": "Crawler Errors by Kind",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 7,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "sum(rate(tissatech_celery_tasks_total[15m])) by (task, status)", "legendFormat": "{{task}} {{status}}", "refId": "A" }
+      ],
+      "title": "Celery Tasks by Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 8,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(tissatech_celery_task_duration_seconds_bucket[30m])) by (le, task))", "legendFormat": "{{task}} p95", "refId": "A" }
+      ],
+      "title": "Celery Task p95 Duration",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 20 },
+      "id": 9,
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "value_and_name" },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "up{job=\"postgres-exporter\"}", "legendFormat": "postgres", "refId": "A" },
+        { "expr": "up{job=\"redis-exporter\"}", "legendFormat": "redis", "refId": "B" },
+        { "expr": "up{job=\"celery-exporter\"}", "legendFormat": "celery", "refId": "C" }
+      ],
+      "title": "Exporter Health",
+      "type": "stat"
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["tissatech", "crawl", "celery"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "TissaTech Crawl & Celery",
+  "uid": "tissatech-crawl-celery",
+  "version": 1,
+  "weekStart": ""
+}
