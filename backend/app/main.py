@@ -27,8 +27,27 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
+    description=(
+        "TissaTech backend API for authentication, admin setup, widget configuration, "
+        "chat streaming, and crawl-and-train pipeline.\n\n"
+        "Frontend teams can use this Swagger UI for request/response formats, "
+        "required headers, and endpoint behavior."
+    ),
     docs_url="/docs",
     redoc_url="/redoc",
+    openapi_tags=[
+        {"name": "health", "description": "Health, readiness, and liveness checks."},
+        {"name": "auth", "description": "Admin authentication, token lifecycle, and user identity endpoints."},
+        {"name": "admin", "description": "Admin dashboard APIs: analytics, crawl pipeline, documents, and widget setup."},
+        {"name": "chat", "description": "Chat APIs for widget and dashboard, including SSE streaming responses."},
+        {"name": "widget", "description": "Public widget bootstrap APIs using `X-Widget-Id` (or legacy `X-API-Key`)."},
+        {"name": "debug", "description": "Development-only diagnostics and verification endpoints."},
+        {"name": "monitoring", "description": "Prometheus metrics endpoint for monitoring stack."},
+    ],
+    swagger_ui_parameters={
+        "defaultModelsExpandDepth": -1,
+        "displayRequestDuration": True,
+    },
     lifespan=lifespan,
 )
 
@@ -73,9 +92,8 @@ app.add_middleware(
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    # FIX: Added X-API-Key so the embedded widget (which sends X-API-Key instead
-    # of Authorization) is not blocked by the browser's preflight CORS check.
-    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-API-Key"],
+    # Allow both modern widget id header and legacy API key header.
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-API-Key", "X-Widget-Id"],
     expose_headers=["X-Request-ID", "X-Response-Time"],
 )
 

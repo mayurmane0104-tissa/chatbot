@@ -48,6 +48,25 @@ bedrock_errors_total = Counter(
     ["error_code"],  # ThrottlingException / AccessDeniedException / etc.
 )
 
+bedrock_region_requests_total = Counter(
+    "tissatech_bedrock_region_requests_total",
+    "Bedrock requests grouped by path, region, and result status",
+    ["path", "region", "status"],  # path=agent|direct, status=success|error|throttled
+)
+
+bedrock_region_failover_total = Counter(
+    "tissatech_bedrock_region_failover_total",
+    "Total Bedrock region failovers",
+    ["path", "from_region", "to_region", "reason"],
+)
+
+bedrock_region_latency_ms = Histogram(
+    "tissatech_bedrock_region_latency_ms",
+    "Bedrock end-to-end latency in milliseconds by request path and final region",
+    ["path", "region"],
+    buckets=[500, 1000, 2000, 3000, 5000, 8000, 10000, 15000, 30000],
+)
+
 # ── Knowledge Base ─────────────────────────────────────────────────────────
 kb_search_total = Counter(
     "kb_search_total",

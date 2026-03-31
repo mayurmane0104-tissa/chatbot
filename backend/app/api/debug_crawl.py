@@ -27,7 +27,11 @@ class CrawlTestRequest(BaseModel):
     max_pages: int = 3       # keep small for a quick test
 
 
-@router.post("/test-crawl")
+@router.post(
+    "/test-crawl",
+    summary="Debug Crawl Test",
+    description="Development endpoint to run crawler synchronously and return crawled page previews.",
+)
 async def test_crawl_sync(body: CrawlTestRequest, admin=Depends(require_admin)):
     """
     Synchronously crawl up to max_pages pages and return the results.
@@ -53,7 +57,11 @@ async def test_crawl_sync(body: CrawlTestRequest, admin=Depends(require_admin)):
         return {"ok": False, "error": str(e)}
 
 
-@router.post("/test-s3-upload")
+@router.post(
+    "/test-s3-upload",
+    summary="Debug S3 Upload Test",
+    description="Development endpoint to verify S3 bucket upload access.",
+)
 async def test_s3_upload(admin=Depends(require_admin)):
     """
     Upload a tiny test file to S3 to verify credentials and bucket access.
@@ -87,7 +95,11 @@ async def test_s3_upload(admin=Depends(require_admin)):
         return {"ok": False, "error": str(e), "bucket": bucket}
 
 
-@router.get("/test-celery-task")
+@router.get(
+    "/test-celery-task",
+    summary="Debug Celery Crawl Task",
+    description="Development endpoint that queues crawl_and_train and returns task ID.",
+)
 async def test_celery_task(url: str, admin=Depends(require_admin)):
     """
     Queue a real crawl_and_train task and return its task ID.
@@ -102,7 +114,11 @@ async def test_celery_task(url: str, admin=Depends(require_admin)):
     }
 
 
-@router.get("/workspace-settings")
+@router.get(
+    "/workspace-settings",
+    summary="Debug Workspace Settings",
+    description="Development endpoint to inspect stored workspace settings directly.",
+)
 async def debug_workspace_settings(admin=Depends(require_admin)):
     """Show current workspace.settings so you can see what Bedrock IDs are stored."""
     from sqlalchemy import text

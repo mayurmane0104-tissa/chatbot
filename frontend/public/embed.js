@@ -10,9 +10,27 @@
     return;
   }
 
-  // Change this to your deployed Next.js app URL
-  const BASE_URL = scriptTag.getAttribute('data-base-url') || 'http://localhost:3000';
-  const API_URL = scriptTag.getAttribute('data-api-url') || '';
+  const defaultBaseUrl = (() => {
+    try {
+      return new URL(scriptTag.src, window.location.href).origin;
+    } catch {
+      return 'http://localhost:3000';
+    }
+  })();
+  const BASE_URL = (scriptTag.getAttribute('data-base-url') || defaultBaseUrl).replace(/\/+$/, '');
+
+  // For local dev convenience, infer API URL from widget base when not provided.
+  const inferredApiUrl = (() => {
+    try {
+      const base = new URL(BASE_URL);
+      if (base.port === '3000') {
+        base.port = '8000';
+        return base.toString().replace(/\/+$/, '');
+      }
+    } catch {}
+    return '';
+  })();
+  const API_URL = scriptTag.getAttribute('data-api-url') || inferredApiUrl;
   const widgetUrl = new URL(`${BASE_URL}/widget/${encodeURIComponent(botId)}`);
   if (API_URL) widgetUrl.searchParams.set('apiBase', API_URL);
   const WIDGET_URL = widgetUrl.toString();

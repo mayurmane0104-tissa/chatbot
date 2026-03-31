@@ -69,8 +69,11 @@ export default function SetupWizard() {
 
   // ── Step 3 — Deploy ───────────────────────────────────────────────────────
   const [copySuccess, setCopySuccess]           = useState(false);
-  const [widgetApiKey, setWidgetApiKey]         = useState<string>('');
-  const [isGeneratingApiKey, setIsGeneratingApiKey] = useState(false);
+  const [deploymentScript, setDeploymentScript] = useState<string>('');
+  const [widgetPublicId, setWidgetPublicId]     = useState<string>('');
+  const [widgetBaseUrl, setWidgetBaseUrl]       = useState<string>('');
+  const [apiBaseUrl, setApiBaseUrl]             = useState<string>('');
+  const [isLoadingScript, setIsLoadingScript]   = useState(false);
 
   // ── Poll crawl status ─────────────────────────────────────────────────────
   const startPolling = (taskId: string) => {
@@ -112,15 +115,21 @@ export default function SetupWizard() {
   // ── Auto-generate API key when entering Step 3 ───────────────────────────
   useEffect(() => {
     if (currentStep !== 3) return;
-    if (widgetApiKey) return;
+    if (deploymentScript) return;
     let cancelled = false;
-    setIsGeneratingApiKey(true);
-    widgetApi.createApiKey()
-      .then((res) => { if (!cancelled) setWidgetApiKey(res.api_key); })
+    setIsLoadingScript(true);
+    widgetApi.getDeploymentScript()
+      .then((res) => {
+        if (cancelled) return;
+        setDeploymentScript(res.script_tag);
+        setWidgetPublicId(res.widget_id);
+        setWidgetBaseUrl(res.widget_base_url);
+        setApiBaseUrl(res.api_base_url);
+      })
       .catch(() => {})
-      .finally(() => { if (!cancelled) setIsGeneratingApiKey(false); });
+      .finally(() => { if (!cancelled) setIsLoadingScript(false); });
     return () => { cancelled = true; };
-  }, [currentStep, widgetApiKey]);
+  }, [currentStep, deploymentScript]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleTrain = async () => {
@@ -172,9 +181,8 @@ export default function SetupWizard() {
   };
 
   const copyCode = () => {
-    if (!widgetApiKey) return;
-    const code = `<script src="${window.location.origin}/embed.js" data-bot-id="${widgetApiKey}" data-base-url="${window.location.origin}" defer></script>`;
-    navigator.clipboard.writeText(code);
+    if (!deploymentScript) return;
+    navigator.clipboard.writeText(deploymentScript);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2500);
   };
@@ -474,17 +482,17 @@ export default function SetupWizard() {
             <div className="bg-white p-10 rounded-[2rem] border border-slate-100 shadow-xl relative w-full text-left font-mono text-sm leading-relaxed">
               <div className="absolute top-4 right-4 flex items-center gap-2 text-xs bg-slate-100 px-3 py-1.5 rounded-full text-slate-500 font-sans">
                 {copySuccess ? <CheckCircle2 size={16} className="text-green-500" /> : <DatabaseZap size={16} />}
-                data-bot-id=&quot;{widgetApiKey || (isGeneratingApiKey ? 'Generating...' : 'Not ready')}&quot;
+                data-bot-id=&quot;{widgetPublicId || (isLoadingScript ? 'Preparing...' : 'Not ready')}&quot;
               </div>
               <pre className="text-slate-600 p-8 pt-10 bg-slate-50 border border-slate-200 rounded-2xl overflow-x-auto">
-                {`<script\n  src="${typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com'}/embed.js"\n  data-bot-id="${widgetApiKey || 'YOUR_WIDGET_API_KEY_HERE'}"\n  data-base-url="${typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com'}"\n  defer\n></script>`}
+                {deploymentScript || `<script\n  src="${widgetBaseUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://your-widget-domain.com')}/embed.js"\n  data-bot-id="${widgetPublicId || 'YOUR_WIDGET_ID_HERE'}"\n  data-base-url="${widgetBaseUrl || (typeof window !== 'undefined' ? window.location.origin : 'https://your-widget-domain.com')}"\n  data-api-url="${apiBaseUrl || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:8000` : 'https://your-api-domain.com')}"\n  defer\n></script>`}
               </pre>
               <button
                 onClick={copyCode}
-                disabled={!widgetApiKey || isGeneratingApiKey}
+                disabled={!deploymentScript || isLoadingScript}
                 className="mt-6 w-full flex items-center justify-center gap-2 px-8 py-3.5 bg-slate-950 text-white font-bold rounded-xl hover:bg-black transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {copySuccess ? 'Copied to Clipboard!' : isGeneratingApiKey ? 'Generating key...' : 'Copy Script'}
+                {copySuccess ? 'Copied to Clipboard!' : isLoadingScript ? 'Preparing script...' : 'Copy Script'}
                 {!copySuccess && <Copy size={18} />}
               </button>
             </div>

@@ -13,7 +13,7 @@ from typing import Optional
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -112,7 +112,12 @@ def _run_crawl_locally(task_id: str, workspace_id: str, url: str, max_pages: int
 # Analytics
 # ─────────────────────────────────────────────────────────────────────────────
 
-@router.get("/analytics/overview")
+@router.get(
+    "/analytics/overview",
+    summary="Get Workspace Analytics",
+    description="Returns conversation metrics, feedback summary, latency, and current KB training status.",
+    response_description="Analytics snapshot for the selected time range.",
+)
 async def get_analytics(
     days: int = 30,
     admin=Depends(require_admin),
@@ -179,7 +184,12 @@ async def get_analytics(
 # Conversations
 # ─────────────────────────────────────────────────────────────────────────────
 
-@router.get("/conversations")
+@router.get(
+    "/conversations",
+    summary="List Conversations (Admin)",
+    description="Returns paginated conversation list for the admin workspace.",
+    response_description="Conversation summaries.",
+)
 async def admin_list_conversations(
     page: int = 1,
     page_size: int = 50,
@@ -212,7 +222,12 @@ async def admin_list_conversations(
 # Documents (manual upload — legacy)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@router.post("/documents")
+@router.post(
+    "/documents",
+    summary="Upload Document",
+    description="Uploads a document and queues background indexing.",
+    response_description="Document upload acknowledgement.",
+)
 async def upload_document(
     file: UploadFile = File(...),
     title: str = "",
@@ -246,7 +261,12 @@ async def upload_document(
     return {"id": str(doc.id), "title": doc.title, "status": doc.status}
 
 
-@router.get("/documents")
+@router.get(
+    "/documents",
+    summary="List Documents",
+    description="Returns uploaded documents and their indexing status.",
+    response_description="Document list.",
+)
 async def list_documents(
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
@@ -271,7 +291,12 @@ async def list_documents(
     ]
 
 
-@router.delete("/documents/{document_id}")
+@router.delete(
+    "/documents/{document_id}",
+    summary="Delete Document",
+    description="Deletes a document in the workspace.",
+    response_description="Delete result.",
+)
 async def delete_document(
     document_id: uuid.UUID,
     admin=Depends(require_admin),
@@ -295,11 +320,23 @@ async def delete_document(
 # ─────────────────────────────────────────────────────────────────────────────
 
 class CrawlRequest(BaseModel):
-    url: str
-    max_pages: int = 100
+    model_config = ConfigDict(
+        json_schema_extra={"example": {"url": "https://tissatech.com", "max_pages": 100}}
+    )
+
+    url: str = Field(description="Website URL to crawl.")
+    max_pages: int = Field(default=100, description="Maximum number of pages to crawl (1 to 500).")
 
 
-@router.post("/crawl")
+@router.post(
+    "/crawl",
+    summary="Start Crawl and Training",
+    description=(
+        "Starts the crawl-and-train pipeline for the current workspace.\n\n"
+        "Use `/admin/crawl-status/{task_id}` to monitor step-wise progress."
+    ),
+    response_description="Queued task information.",
+)
 async def trigger_crawl(
     body: CrawlRequest,
     admin=Depends(require_admin),
@@ -402,7 +439,15 @@ async def trigger_crawl(
     }
 
 
-@router.get("/crawl-status/{task_id}")
+@router.get(
+    "/crawl-status/{task_id}",
+    summary="Get Crawl Status",
+    description=(
+        "Returns current task state and workspace KB status.\n\n"
+        "Recommended polling interval: every 2 to 5 seconds."
+    ),
+    response_description="Task and KB progress status.",
+)
 async def get_crawl_status(
     task_id: str,
     admin=Depends(require_admin),
@@ -451,7 +496,12 @@ async def get_crawl_status(
     }
 
 
-@router.get("/workspace-settings")
+@router.get(
+    "/workspace-settings",
+    summary="Get Workspace Bedrock Settings",
+    description="Returns workspace-level Bedrock and KB configuration used by chat and training pipeline.",
+    response_description="Workspace settings relevant to AI setup.",
+)
 async def get_workspace_settings(
     admin=Depends(require_admin),
     db: AsyncSession = Depends(get_db),

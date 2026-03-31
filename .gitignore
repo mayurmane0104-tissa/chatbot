@@ -17,3 +17,5 @@ node_modules/
 Thumbs.db
 
 infrastructure/docker/.env.copied
+
+*.zip

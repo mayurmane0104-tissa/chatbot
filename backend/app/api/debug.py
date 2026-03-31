@@ -9,7 +9,11 @@ from app.core.config import settings
 router = APIRouter()
 
 
-@router.get("/debug/config")
+@router.get(
+    "/debug/config",
+    summary="Debug Config Check",
+    description="Development-only endpoint that shows masked runtime configuration values.",
+)
 async def check_config():
     """Shows which env vars are set (values masked for security)."""
     if settings.is_production:
@@ -37,7 +41,11 @@ async def check_config():
     }
 
 
-@router.get("/debug/bedrock-test")
+@router.get(
+    "/debug/bedrock-test",
+    summary="Debug Bedrock Test",
+    description="Development-only endpoint that sends a test prompt to Bedrock and returns raw stream output.",
+)
 async def test_bedrock():
     """Sends a test message to Bedrock and returns the full response."""
     if settings.is_production:
@@ -70,7 +78,11 @@ async def test_bedrock():
     }
 
 
-@router.get("/debug/db-test")
+@router.get(
+    "/debug/db-test",
+    summary="Debug DB Test",
+    description="Development-only endpoint that verifies DB connection and lists public tables.",
+)
 async def test_db():
     """Tests database connectivity and lists all tables."""
     if settings.is_production:

@@ -121,6 +121,45 @@
       ],
       "title": "Bedrock Errors by Code",
       "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 20 },
+      "id": 9,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(tissatech_bedrock_region_latency_ms_bucket[5m])) by (le, path, region))", "legendFormat": "{{path}}/{{region}}", "refId": "A" }
+      ],
+      "title": "Bedrock Regional p95 Latency (ms)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 20 },
+      "id": 10,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "sum(rate(tissatech_bedrock_region_failover_total[5m])) by (path, from_region, to_region, reason)", "legendFormat": "{{path}} {{from_region}}→{{to_region}} ({{reason}})", "refId": "A" }
+      ],
+      "title": "Bedrock Regional Failover Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 20 },
+      "id": 11,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        { "expr": "(sum(rate(tissatech_bedrock_region_requests_total{status=~\"error|throttled\"}[5m])) by (path, region) / clamp_min(sum(rate(tissatech_bedrock_region_requests_total[5m])) by (path, region), 0.01))", "legendFormat": "{{path}}/{{region}}", "refId": "A" }
+      ],
+      "title": "Bedrock Regional Error Ratio",
+      "type": "timeseries"
     }
   ],
   "refresh": "15s",

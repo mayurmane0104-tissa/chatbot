@@ -31,6 +31,11 @@ Open .env in Notepad and fill in:
    BEDROCK_AGENT_ID=your_agent_id (short ID only, not ARN)
    BEDROCK_AGENT_ALIAS_ID=your_alias_id
    BEDROCK_KNOWLEDGE_BASE_ID=your_kb_id
+   BEDROCK_AGENT_REGION=us-east-1
+   BEDROCK_FALLBACK_REGIONS=us-west-2,eu-west-1,ap-south-1
+   BEDROCK_CONNECT_TIMEOUT_SECONDS=4
+   BEDROCK_READ_TIMEOUT_SECONDS=60
+   BEDROCK_RETRIEVAL_RESULTS=12
 
 IMPORTANT: Use the SAME password in POSTGRES_PASSWORD and DATABASE_URL
 
@@ -174,3 +179,19 @@ After full stack is up:
 Grafana auto-loads:
 - TissaTech Overview
 - TissaTech Crawl & Celery
+
+Regional latency monitoring panels now include:
+- Bedrock Regional p95 Latency (ms)
+- Bedrock Regional Failover Rate
+- Bedrock Regional Error Ratio
+
+=======================================================
+API DOCUMENTATION FOR FRONTEND
+=======================================================
+
+Backend API integration guide:
+  backend/API_INTEGRATION_GUIDE.md
+
+Live Swagger docs:
+  http://localhost:8000/docs
+

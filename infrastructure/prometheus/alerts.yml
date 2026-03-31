@@ -70,6 +70,42 @@ groups:
           summary: "Bedrock p95 latency is high"
           description: "Bedrock p95 latency is above 10 seconds over the last 10 minutes."
 
+      - alert: BedrockRegionalP95LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(tissatech_bedrock_region_latency_ms_bucket[10m])) by (le, path, region)
+          ) > 9000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bedrock regional p95 latency is high"
+          description: "Bedrock regional p95 latency is above 9 seconds ({{ $labels.path }} / {{ $labels.region }})."
+
+      - alert: BedrockRegionalErrorRateHigh
+        expr: |
+          (
+            sum(rate(tissatech_bedrock_region_requests_total{status=~"error|throttled"}[10m])) by (path, region)
+            /
+            clamp_min(sum(rate(tissatech_bedrock_region_requests_total[10m])) by (path, region), 0.01)
+          ) > 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bedrock regional error rate is high"
+          description: "Bedrock regional error+throttle ratio is above 15% ({{ $labels.path }} / {{ $labels.region }})."
+
+      - alert: BedrockRegionFailoverSpike
+        expr: sum(rate(tissatech_bedrock_region_failover_total[10m])) by (path, from_region, to_region, reason) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bedrock region failovers are increasing"
+          description: "Frequent Bedrock failovers detected ({{ $labels.path }}: {{ $labels.from_region }} -> {{ $labels.to_region }}, reason={{ $labels.reason }})."
+
       - alert: CrawlFailureDetected
         expr: increase(tissatech_crawl_jobs_total{status="failed"}[15m]) > 0
         for: 0m

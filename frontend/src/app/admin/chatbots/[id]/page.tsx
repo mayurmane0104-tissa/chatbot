@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   MessageCircle, Palette, Layout, ArrowLeft,
-  Pipette, Plus, Trash2, Save, Bot, Loader2, CheckCircle2
+  Pipette, Plus, Trash2, Save, Bot, Loader2, CheckCircle2, Copy
 } from 'lucide-react';
 import { adminApi, widgetApi, type Conversation } from '@/lib/api';
 
@@ -16,6 +16,10 @@ export default function BotDetailView() {
   const [mounted, setMounted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [deploymentScript, setDeploymentScript] = useState('');
+  const [widgetPublicId, setWidgetPublicId] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [scriptLoading, setScriptLoading] = useState(false);
 
   // Bot settings
   const [botName, setBotName] = useState('Tissa Support Bot');
@@ -42,6 +46,15 @@ export default function BotDetailView() {
       if (cfg.primary_color) setPrimaryColor(cfg.primary_color);
       if (cfg.greeting_message) setWelcomeMsg(cfg.greeting_message);
     }).catch(() => {});
+
+    setScriptLoading(true);
+    widgetApi.getDeploymentScript()
+      .then((res) => {
+        setDeploymentScript(res.script_tag);
+        setWidgetPublicId(res.widget_id);
+      })
+      .catch(() => {})
+      .finally(() => setScriptLoading(false));
   }, []);
 
   useEffect(() => {
@@ -81,6 +94,13 @@ export default function BotDetailView() {
     setFormFields([...formFields, {
       id: Date.now().toString(), label: 'New Field', type: 'text', enabled: true, required: false,
     }]);
+  };
+
+  const copyScript = async () => {
+    if (!deploymentScript) return;
+    await navigator.clipboard.writeText(deploymentScript).catch(() => {});
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
   };
 
   return (
@@ -151,6 +171,24 @@ export default function BotDetailView() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Welcome Message</label>
                     <textarea value={welcomeMsg} onChange={(e) => setWelcomeMsg(e.target.value)} rows={4}
                       className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-sm outline-none focus:border-indigo-500 transition-all resize-none" />
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Deploy Script {widgetPublicId ? `(Widget ID: ${widgetPublicId})` : ''}
+                    </label>
+                    <pre className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-mono text-xs overflow-x-auto text-slate-700">
+                      {deploymentScript || 'Script not available yet.'}
+                    </pre>
+                    <button
+                      type="button"
+                      onClick={copyScript}
+                      disabled={!deploymentScript || scriptLoading}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black hover:bg-black disabled:opacity-60"
+                    >
+                      <Copy size={14} />
+                      {copySuccess ? 'Copied' : scriptLoading ? 'Preparing...' : 'Copy Script'}
+                    </button>
                   </div>
                 </div>
               </div>

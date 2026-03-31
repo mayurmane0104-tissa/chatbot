@@ -20,8 +20,8 @@ export default function WelcomeView({ botId }: Props) {
   });
 
   useEffect(() => {
-    // In this product, `botId` is the RAW widget API key.
-    // The backend expects it as `X-API-Key` to resolve the correct workspace.
+    // `botId` is the public widget id from embed script.
+    // We also send it through legacy API-key header for backward compatibility.
     widgetApi.getPublicConfig(botId).then(setConfig).catch(() => {});
   }, [botId]);
 

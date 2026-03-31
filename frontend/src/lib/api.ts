@@ -107,6 +107,12 @@ export interface TokenResponse {
   expires_in: number;
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+  reset_token?: string;
+  reset_url?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -158,6 +164,15 @@ export interface WidgetConfig {
   placeholder_text: string;
   avatar_url?: string;
   position: string;
+  allowed_domains?: string[];
+  widget_public_id?: string;
+}
+
+export interface WidgetDeployment {
+  widget_id: string;
+  widget_base_url: string;
+  api_base_url: string;
+  script_tag: string;
 }
 
 export interface Document {
@@ -219,6 +234,20 @@ export const authApi = {
     }
     clearTokens();
   },
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    return apiFetch('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    return apiFetch('/api/v1/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+  },
 };
 
 // ── Admin API ────────────────────────────────────────────────────────────────
@@ -276,7 +305,7 @@ export const adminApi = {
 // ── Widget Config API ─────────────────────────────────────────────────────────
 export const widgetApi = {
   getConfig: (): Promise<WidgetConfig> =>
-    apiFetch('/api/v1/widget/config'),
+    apiFetch('/api/v1/admin/widget-config'),
 
   saveConfig: (config: Partial<WidgetConfig>): Promise<WidgetConfig> =>
     apiFetch('/api/v1/admin/widget-config', { method: 'POST', body: JSON.stringify(config) }),
@@ -286,9 +315,15 @@ export const widgetApi = {
   createApiKey: (): Promise<{ api_key: string; prefix: string }> =>
     apiFetch('/api/v1/admin/widget-api-key', { method: 'POST' }),
 
+  getDeploymentScript: (): Promise<WidgetDeployment> =>
+    apiFetch('/api/v1/admin/widget-deployment-script'),
+
   getPublicConfig: async (apiKey?: string): Promise<WidgetConfig> => {
     const headers: Record<string, string> = {};
-    if (apiKey) headers['X-API-Key'] = apiKey;
+    if (apiKey) {
+      headers['X-Widget-Id'] = apiKey;
+      headers['X-API-Key'] = apiKey; // Legacy fallback.
+    }
     const res = await fetch(`${getApiUrl()}/api/v1/widget/config`, { headers });
     if (!res.ok) return {
       bot_name: 'Tissa', greeting_message: 'Hi! How can I help you today?',
@@ -315,14 +350,17 @@ export const chatApi = {
 
   getRoleSuggestions: async (
     role: string,
-    widgetApiKey?: string,
+    widgetCredential?: string,
     limit = 5,
   ): Promise<RoleSuggestionsResponse> => {
     const params = new URLSearchParams({ role, limit: String(limit) });
     const token = getAccessToken();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers.Authorization = `Bearer ${token}`;
-    if (widgetApiKey) headers['X-API-Key'] = widgetApiKey;
+    if (widgetCredential) {
+      headers['X-Widget-Id'] = widgetCredential;
+      headers['X-API-Key'] = widgetCredential; // Legacy fallback.
+    }
 
     const res = await fetch(`${getApiUrl()}/api/v1/chat/suggestions?${params.toString()}`, {
       method: 'GET',
@@ -350,7 +388,7 @@ export async function* streamChatMessage(
   conversationId?: string | null,
   sessionId?: string,
   userProfile?: Record<string, string>,
-  widgetApiKey?: string,
+  widgetCredential?: string,
 ): AsyncGenerator<StreamChunk> {
   const token = getAccessToken();
   const headers: Record<string, string> = {
@@ -358,7 +396,10 @@ export async function* streamChatMessage(
     Accept: 'text/event-stream',
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  if (widgetApiKey) headers['X-API-Key'] = widgetApiKey;
+  if (widgetCredential) {
+    headers['X-Widget-Id'] = widgetCredential;
+    headers['X-API-Key'] = widgetCredential; // Legacy fallback.
+  }
 
   const body: Record<string, unknown> = { message, session_id: sessionId };
   if (conversationId) body.conversation_id = conversationId;
